@@ -21,6 +21,11 @@
    SOFTWARE.
 -}
 
+{-# LANGUAGE OverloadedStrings #-}
+
+import Control.Concurrent
+import Control.Monad
+import Data.ByteString as B
 import System.Environment
 import System.IO
 import System.Hardware.Serialport
@@ -28,7 +33,14 @@ import System.Hardware.Serialport
 
 main :: IO ()
 main = do [port] <- getArgs
-          h <- hOpenSerial port defaultSerialSettings
-          hPutStr h "s"
-          myChar <- hGetChar h
-          print myChar
+          time <- withSerial port defaultSerialSettings (timeSerial)
+          print time
+          print (B.length time)
+
+-- | Count the number of times we get an 'a' or something.
+timeSerial :: SerialPort -> IO ByteString
+timeSerial port = do threadDelay 10000000
+                     flush port
+                     sent <- send port "s"
+                     threadDelay 300000
+                     recv port 1000000
